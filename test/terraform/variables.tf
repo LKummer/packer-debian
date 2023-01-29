@@ -22,5 +22,5 @@ variable "cloud_init_public_keys" {
 variable "disk_size" {
   description = "Disk size when cloning, used to test disk resizing."
   type        = string
-  default     = "30G"
+  default     = "15G"
 }
