@@ -3,26 +3,16 @@ variable "proxmox_node" {
   type        = string
 }
 
-variable "ssh_password" {
-  description = "Root user password."
-  type        = string
-  sensitive   = true
-}
-
 variable "template_name" {
   description = "Name of the created template."
   type        = string
-  default     = "alpine"
+  default     = "debian"
 }
 
 variable "template_name_suffix" {
   description = "Suffix added to template_name, used to add Git commit hash or tag to template name."
   type        = string
   default     = ""
-}
-
-local "ssh_port" {
-  expression = "2222"
 }
 
 variable "template_description" {
@@ -34,13 +24,13 @@ https://git.houseofkummer.com/homelab/devops/packer-alpine
 EOF
 }
 
-source "proxmox-iso" "alpine" {
+source "proxmox-iso" "debian" {
   insecure_skip_tls_verify = true
   node                     = var.proxmox_node
 
   iso_storage_pool = "local"
-  iso_url          = "https://dl-cdn.alpinelinux.org/alpine/v3.17/releases/x86_64/alpine-virt-3.17.1-x86_64.iso"
-  iso_checksum     = "19d22173b53cd169f65db08a966b51f9ef02750a621902d0d784195d7251b83b"
+  iso_url          = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.6.0-amd64-netinst.iso"
+  iso_checksum     = "224cd98011b9184e49f858a46096c6ff4894adff8945ce89b194541afdfd93b73b4666b0705234bd4dff42c0a914fdb6037dd0982efb5813e8a553d8e92e6f51"
 
   template_name        = "${var.template_name}${var.template_name_suffix}"
   template_description = var.template_description
@@ -50,6 +40,9 @@ source "proxmox-iso" "alpine" {
   scsi_controller = "virtio-scsi-pci"
   os              = "l26"
   qemu_agent      = true
+
+  memory   = 2048
+  cores    = 2
 
   network_adapters {
     model  = "virtio"
@@ -64,71 +57,27 @@ source "proxmox-iso" "alpine" {
     format            = "raw"
   }
 
+  http_directory = "http"
   ssh_username = "root"
-  ssh_password = var.ssh_password
-  ssh_port     = local.ssh_port
-  ssh_timeout  = "5m"
+  ssh_password = "packer"
+  ssh_port     = 22
+  ssh_timeout  = "10m"
 
-  boot_command = [
-    "root<enter><wait>",
-    "ifconfig 'eth0' up && udhcpc -i 'eth0'<enter><wait5s>",
-    "setup-alpine -q<enter><wait>",
-    # Select US keyboard layout.
-    "us<enter>",
-    "us<enter><wait10s>",
-    "setup-timezone -z Israel<enter><wait>",
-    "setup-sshd -c openssh<enter><wait>",
-    "setup-disk -m sys<enter>",
-    # Choose sda.
-    "<enter>",
-    "y<enter><wait15s>",
-    # Mount installation partition and change SSHD config.
-    "mount /dev/sda3 /mnt<enter>",
-    # It will be disabled later by Cloud Init.
-    "echo 'PermitRootLogin yes' >> /mnt/etc/ssh/sshd_config<enter>",
-    "echo 'Port ${local.ssh_port}' >> /mnt/etc/ssh/sshd_config<enter>",
-    # Reboot and setup QEMU Guest Agent so Packer can connect with SSH.
-    "reboot<enter><wait30s>",
-    "root<enter><wait>",
-    # Set root password.
-    "echo 'root:${var.ssh_password}' | chpasswd<enter>",
-    # Enable community repository.
-    "sed -i 's:#\\(.*/v.*/community\\):\\1:' /etc/apk/repositories<enter>",
-    "apk update<enter><wait5s>",
-    "apk add qemu-guest-agent<enter><wait5s>",
-    # Set device path to /dev/vport2p1 for QEMU guest agent.
-    "sed -i 's:/dev/virtio-ports/org.qemu.guest_agent.0:/dev/vport2p1:' /etc/init.d/qemu-guest-agent<enter>",
-    # Add and start OpenRC service.
-    "rc-update add qemu-guest-agent<enter>",
-    "rc-service qemu-guest-agent start<enter>",
-  ]
+  boot_wait    = "10s"
+  boot_command = ["<esc><wait>auto url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<enter>"] 
 
   cloud_init              = true
   cloud_init_storage_pool = "local-lvm"
 }
 
 build {
-  sources = ["source.proxmox-iso.alpine"]
+  sources = ["source.proxmox-iso.debian"]
 
-  # Python, sudo and Cloud Init setup.
   provisioner "shell" {
     inline = [
-      "apk add python3 py3-pip sudo",
-      # e2fsprogs-extra is required by Cloud Init for creating/resizing filesystems.
-      # See https://git.alpinelinux.org/aports/tree/community/cloud-init/README.Alpine.
-      "apk add cloud-init e2fsprogs-extra py3-pyserial py3-netifaces",
-      "setup-cloud-init",
-    ]
-  }
-
-  # Cleanup.
-  provisioner "shell" {
-    inline = [
-      # Password SSH login is already disabled by Cloud Init.
-      "sed -i '/PermitRootLogin yes/d' /etc/ssh/sshd_config",
+      "apt-get install --yes python3-pip",
       "passwd --lock root",
-      # Remove command history.
-      "rm -rf /root/.ash_history"
+      "echo PasswordAuthentication no >> /etc/ssh/sshd_config"
     ]
   }
 }

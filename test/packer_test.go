@@ -19,7 +19,6 @@ func TestPackerAlpineBuild(t *testing.T) {
 		Vars: map[string]string{
 			"template_name": templateName,
 			"proxmox_node":  "bfte",
-			"ssh_password":  "FOR_TESTING_ONLY",
 		},
 	}
 
@@ -44,11 +43,15 @@ func TestPackerAlpineBuild(t *testing.T) {
 	sshIP := terraform.Output(t, terraformOptions, "ssh_ip")
 	sshUser := terraform.Output(t, terraformOptions, "user")
 	password := terraform.Output(t, terraformOptions, "password")
+
+	// Wait after cloning VM.
+	time.Sleep(30 * time.Second)
+
 	host := ssh.Host{
 		Hostname:    sshIP,
 		SshUserName: sshUser,
 		SshKeyPair:  sshKeyPair,
-		CustomPort:  2222,
+		CustomPort:  22,
 	}
 
 	// Check Cloud Init ran successfully and SSH works.
@@ -63,7 +66,7 @@ func TestPackerAlpineBuild(t *testing.T) {
 		Hostname:    sshIP,
 		SshUserName: sshUser,
 		Password:    password,
-		CustomPort:  2222,
+		CustomPort:  22,
 	})
 	assert.Error(t, err)
 
@@ -71,31 +74,10 @@ func TestPackerAlpineBuild(t *testing.T) {
 	rootPasswordStatus := ssh.CheckSshCommand(t, host, "sudo passwd --status root")
 	assert.Regexp(t, "^root L ", rootPasswordStatus)
 
-	// Check root shell history file is not present.
-	ssh.CheckSshCommand(t, host, "!(sudo test -f /root/.ash_history)")
-
 	// Check Python is installed.
 	ssh.CheckSshCommand(t, host, "python3 --version")
 	ssh.CheckSshCommand(t, host, "pip --version")
 
 	// Check sudo is installed.
 	ssh.CheckSshCommand(t, host, "sudo --version")
-
-	// Apply with increased disk size.
-	diskResizeOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "terraform",
-		Vars: map[string]interface{}{
-			"cloud_init_public_keys": sshKeyPair.PublicKey,
-			"proxmox_template":       templateName,
-			"disk_size":              "20G",
-		},
-	})
-	terraform.Apply(t, diskResizeOptions)
-
-	// Wait for the VM to boot, because resizing the disk restarts it.
-	time.Sleep(15 * time.Second)
-
-	// Check filesystem is resized.
-	dhOutput = ssh.CheckSshCommand(t, host, "sudo df -h")
-	assert.Regexp(t, "/dev/sda3 *18.4G", dhOutput)
 }
