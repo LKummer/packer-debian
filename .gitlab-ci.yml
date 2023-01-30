@@ -27,12 +27,24 @@ lint-test:
     - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.45.2
     - bin/golangci-lint run
 
+upload-preseed:
+  image: docker.houseofkummer.com/homelab/dockops:0.6.0
+  script:
+    - echo "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/http/preseed.cfg" > preseed-url.txt
+  artifacts:
+    when: always
+    paths:
+    - http/preseed.cfg
+    - preseed-url.txt
+    expire_in: 1 week
+
 # Requires PROXMOX_URL, PROXMOX_USERNAME, PROXMOX_TOKEN variables which are
 # described in the readme. Make sure to set them in GitLab.
 test-packer:
   extends: .go-cache
   stage: test
   needs:
+    - upload-preseed
     - format-test
     - lint-test
   image: golang:1.18.2
@@ -53,7 +65,7 @@ test-packer:
     - mv gotestsum /usr/local/bin
     - cd test
     # Use gotestsum to generate a JUnit-like report.
-    - gotestsum --junitfile report.xml --format testname
+    - PRESEED_URL="$(cat ../preseed-url.txt)" gotestsum --junitfile report.xml --format testname
   artifacts:
     when: always
     reports:
@@ -68,6 +80,7 @@ format-packer:
 build-packer:
   stage: release
   needs:
+    - upload-preseed
     - test-packer
     - format-packer
   rules:
@@ -80,7 +93,7 @@ build-packer:
     # Note the root account is locked, so the password does not really matter.
     PKR_VAR_ssh_password: ${TEMPLATE_ROOT_PASSWORD}
   script:
-    - packer build alpine.pkr.hcl
+    - PKR_VAR_preseed_url="$(cat preseed-url.txt)" packer build alpine.pkr.hcl
 
 release:
   stage: release

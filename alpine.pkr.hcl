@@ -1,3 +1,9 @@
+variable "preseed_url" {
+  description = "Preseed file URL."
+  type        = string
+  default     = "http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg"
+}
+
 variable "proxmox_node" {
   description = "Proxmox node ID to create the template on."
   type        = string
@@ -41,8 +47,8 @@ source "proxmox-iso" "debian" {
   os              = "l26"
   qemu_agent      = true
 
-  memory   = 2048
-  cores    = 2
+  memory = 2048
+  cores  = 2
 
   network_adapters {
     model  = "virtio"
@@ -58,13 +64,16 @@ source "proxmox-iso" "debian" {
   }
 
   http_directory = "http"
-  ssh_username = "root"
-  ssh_password = "packer"
-  ssh_port     = 22
-  ssh_timeout  = "10m"
+  ssh_username   = "root"
+  ssh_password   = "packer"
+  ssh_port       = 22
+  ssh_timeout    = "10m"
 
-  boot_wait    = "10s"
-  boot_command = ["<esc><wait>auto url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<enter>"] 
+  boot_wait = "10s"
+  boot_command = [
+    "<esc><wait>",
+    "auto url=${var.preseed_url}<enter>"
+  ]
 
   cloud_init              = true
   cloud_init_storage_pool = "local-lvm"
@@ -82,7 +91,7 @@ build {
   }
 
   provisioner "file" {
-    content = <<EOF
+    content     = <<EOF
 growpart:
   devices:
     - '/dev/sda2'
