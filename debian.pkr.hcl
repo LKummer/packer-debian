@@ -56,10 +56,10 @@ source "proxmox-iso" "debian" {
   }
 
   disks {
-    type              = "scsi"
-    disk_size         = "10G"
-    storage_pool      = "local-lvm"
-    format            = "raw"
+    type         = "scsi"
+    disk_size    = "10G"
+    storage_pool = "local-lvm"
+    format       = "raw"
   }
 
   http_directory = "http"
