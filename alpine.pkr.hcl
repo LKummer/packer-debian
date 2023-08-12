@@ -59,7 +59,6 @@ source "proxmox-iso" "debian" {
     type              = "scsi"
     disk_size         = "10G"
     storage_pool      = "local-lvm"
-    storage_pool_type = "lvm-thin"
     format            = "raw"
   }
 
