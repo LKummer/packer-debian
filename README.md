@@ -1,12 +1,12 @@
-# Packer Alpine
+# Packer Debian
 
-Packer configuration for building an Alpine Linux 'cloud image' Proxmox template.
+Packer configuration for building a Debian Linux 'cloud image' Proxmox template.
 
 Features:
 
 * Includes Cloud Init for configuration when cloning.
-* Includes Python for configuration with Ansible.
 * Includes `sudo` and QEMU guest agent.
+* Ready for configuration with Ansible.
 * Tested with Terratest.
 
 ## Usage
@@ -17,7 +17,7 @@ This template is meant for use [with terraform-proxmox machine module](https://g
 module "example_vm" {
   source = "github.com/LKummer/terraform-proxmox//modules/machine"
 
-  proxmox_template = "alpine-3.16.2-1"
+  proxmox_template = "debian-12.1.0-1"
   # ...
 }
 ```
@@ -28,8 +28,8 @@ See [terraform-proxmox machine example for more details](https://github.com/LKum
 
 Required tools:
 
-* Packer `v1.8.2`.
-* Terraform `v1.2.4`.
+* Packer `v1.9.1`.
+* Terraform `v1.4.6`.
 * Go `1.18.2`.
 
 To create a Proxmox API token with correct privileges, [follow this guide](https://homelab.pages.houseofkummer.com/wiki/administrate/proxmox-api-tokens/).
@@ -47,7 +47,7 @@ Set `PROXMOX_URL`, `PROXMOX_USERNAME` and `PROXMOX_TOKEN` environment variables.
 Build with a template name suffix denoting the current commit, for example `2b1adb0`:
 
 ```sh
-packer build --var-file secrets.pkr.hcl --var template_name_suffix=-2b1adb0 alpine.pkr.hcl
+packer build --var-file secrets.pkr.hcl --var template_name_suffix=-2b1adb0 debian.pkr.hcl
 ```
 
 ### Test
@@ -96,14 +96,12 @@ golangci-lint run
 Set `PACKER_LOG=1` to enable logging for easier troubleshooting.
 
 Avoid running Packer on Windows.
-This repository, Packer and Alpine all assume you are running on Linux.
+This repository, Packer and Debian all assume you are running on Linux.
 
 ## Useful Resources
 
 * [Packer Proxmox ISO builder documentation](https://www.packer.io/docs/builders/proxmox/iso).
 * [Proxmox wiki on creating a custom cloud image](https://pve.proxmox.com/wiki/Cloud-Init_FAQ#Creating_a_custom_cloud_image).
 * [cloud-init documentation](https://cloudinit.readthedocs.io/en/latest/index.html).
-* [Alpine cloud-init package readme](https://git.alpinelinux.org/aports/tree/community/cloud-init/README.Alpine).
-* [Alpine Linux downloads](https://www.alpinelinux.org/downloads/).
 * [Setting up Proxmox role with permissions for Packer](https://github.com/hashicorp/packer/issues/8463#issuecomment-726844945).
 * [Official Alpine cloud image builder](https://gitlab.alpinelinux.org/alpine/cloud/alpine-cloud-images).

@@ -1,4 +1,4 @@
-module git.houseofkummer.com/homelab/devops/packer-alpine/test
+module git.houseofkummer.com/homelab/devops/packer-debian/test
 
 go 1.18
 

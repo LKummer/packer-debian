@@ -25,8 +25,8 @@ variable "template_description" {
   description = "Description of the created template."
   type        = string
   default     = <<EOF
-Alpine Linux cloud image with QEMU guest agent, cloud-init and Python.
-https://git.houseofkummer.com/homelab/devops/packer-alpine
+Debian Linux cloud image with QEMU guest agent and cloud-init.
+https://git.houseofkummer.com/homelab/devops/packer-debian
 EOF
 }
 

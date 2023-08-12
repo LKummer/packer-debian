@@ -1,9 +1,9 @@
 package test
 
 import (
+	"os"
 	"testing"
 	"time"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/gruntwork-io/terratest/modules/packer"
@@ -12,29 +12,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPackerAlpineBuild(t *testing.T) {
-	
+func TestPackerDebianBuild(t *testing.T) {
 	templateName := "packer-debian-test-" + uuid.NewString()
 	packerOptions := &packer.Options{
-		Template:   "alpine.pkr.hcl",
+		Template:   "debian.pkr.hcl",
 		WorkingDir: "..",
 		Vars: map[string]string{
 			"template_name": templateName,
 			"proxmox_node":  "bfte",
 		},
 	}
-	preseedURL := os.Getenv("PRESEED_URL")
-	if (0 < len(preseedURL)) {
-		packerOptions = &packer.Options{
-			Template:   "alpine.pkr.hcl",
-			WorkingDir: "..",
-			Vars: map[string]string{
-				"template_name": templateName,
-				"proxmox_node":  "bfte",
-				"preseed_url": preseedURL,
-			},
+	preseedURL, ok := os.LookupEnv("PRESEED_URL")
+	if ok {
+		packerOptions.Vars = map[string]string{
+			"template_name": templateName,
+			"proxmox_node":  "bfte",
+			"preseed_url":   preseedURL,
 		}
-
 	}
 
 	defer deleteProxmoxVM(t, templateName)
