@@ -15,7 +15,7 @@ import (
 func TestPackerDebianBuild(t *testing.T) {
 	templateName, ok := os.LookupEnv("TEST_EXISTING_TEMPLATE")
 	if !ok {
-		templateName := "packer-debian-test-" + uuid.NewString()
+		templateName = "packer-debian-test-" + uuid.NewString()
 		packerOptions := &packer.Options{
 			Template:   "debian.pkr.hcl",
 			WorkingDir: "..",
