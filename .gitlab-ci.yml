@@ -1,6 +1,7 @@
 stages:
   - test
   - release
+  - verify
 
 # See https://docs.gitlab.com/ee/ci/caching/#cache-go-dependencies
 .go-cache:
@@ -27,6 +28,24 @@ lint-test:
     - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.45.2
     - bin/golangci-lint run
 
+format-packer:
+  stage: test
+  image: docker.houseofkummer.com/homelab/dockops:0.6.0
+  script:
+    - packer fmt -check .
+
+validate-packer:
+  stage: test
+  image: debian:bullseye
+  script:
+    - apt-get update
+    - apt-get install --yes wget unzip
+    - wget -O /tmp/packer.zip https://releases.hashicorp.com/packer/1.9.1/packer_1.9.1_linux_amd64.zip
+    - unzip /tmp/packer.zip
+    - mv packer /usr/local/bin
+    - packer init debian.pkr.hcl
+    - packer validate -var-file secrets.example.pkr.hcl debian.pkr.hcl
+
 upload-preseed:
   image: docker.houseofkummer.com/homelab/dockops:0.6.0
   script:
@@ -47,6 +66,7 @@ test-packer:
     - upload-preseed
     - format-test
     - lint-test
+    - validate-packer
   image: golang:1.18.2
   variables:
     PM_API_TOKEN_ID: ${PROXMOX_USERNAME}
@@ -54,10 +74,10 @@ test-packer:
   script:
     - apt update
     - apt install unzip
-    - wget -O /tmp/packer.zip https://releases.hashicorp.com/packer/1.8.2/packer_1.8.2_linux_amd64.zip
+    - wget -O /tmp/packer.zip https://releases.hashicorp.com/packer/1.9.1/packer_1.9.1_linux_amd64.zip
     - unzip /tmp/packer.zip
     - mv packer /usr/local/bin
-    - wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.2.5/terraform_1.2.5_linux_amd64.zip
+    - wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.4.6/terraform_1.4.6_linux_amd64.zip
     - unzip /tmp/terraform.zip
     - mv terraform /usr/local/bin
     - wget -O /tmp/gotestsum.tar.gz https://github.com/gotestyourself/gotestsum/releases/download/v1.8.1/gotestsum_1.8.1_linux_amd64.tar.gz
@@ -71,21 +91,17 @@ test-packer:
     reports:
       junit: test/report.xml
 
-format-packer:
-  stage: test
-  image: docker.houseofkummer.com/homelab/dockops:0.6.0
-  script:
-    - packer fmt -check .
-
 build-packer:
   stage: release
   needs:
     - upload-preseed
+    - format-test
     - test-packer
     - format-packer
+    - validate-packer
   rules:
     - if: $CI_COMMIT_TAG
-  image: docker.houseofkummer.com/homelab/dockops:0.6.0
+  image: debian:bullseye
   variables:
     PKR_VAR_template_name_suffix: -${CI_COMMIT_TAG}
     PKR_VAR_proxmox_node: bfte
@@ -93,12 +109,47 @@ build-packer:
     # Note the root account is locked, so the password does not really matter.
     PKR_VAR_ssh_password: ${TEMPLATE_ROOT_PASSWORD}
   script:
-    - PKR_VAR_preseed_url="$(cat preseed-url.txt)" packer build alpine.pkr.hcl
+    - apt-get update
+    - apt-get install --yes wget unzip
+    - wget -O /tmp/packer.zip https://releases.hashicorp.com/packer/1.9.1/packer_1.9.1_linux_amd64.zip
+    - unzip /tmp/packer.zip
+    - mv packer /usr/local/bin
+    - packer init debian.pkr.hcl
+    - PKR_VAR_preseed_url="$(cat preseed-url.txt)" packer build debian.pkr.hcl
 
-release:
-  stage: release
+test-packer-artifact:
+  extends: .go-cache
+  stage: verify
   needs:
     - build-packer
+  rules:
+    - if: $CI_COMMIT_TAG
+  image: golang:1.18.2
+  variables:
+    PM_API_TOKEN_ID: ${PROXMOX_USERNAME}
+    PM_API_TOKEN_SECRET: ${PROXMOX_TOKEN}
+    TEST_EXISTING_TEMPLATE: debian-${CI_COMMIT_TAG}
+  script:
+    - apt-get update
+    - apt-get install --yes unzip
+    - wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.4.6/terraform_1.4.6_linux_amd64.zip
+    - unzip /tmp/terraform.zip
+    - mv terraform /usr/local/bin
+    - wget -O /tmp/gotestsum.tar.gz https://github.com/gotestyourself/gotestsum/releases/download/v1.8.1/gotestsum_1.8.1_linux_amd64.tar.gz
+    - tar -xzf /tmp/gotestsum.tar.gz
+    - mv gotestsum /usr/local/bin
+    - cd test
+    # Use gotestsum to generate a JUnit-like report.
+    - gotestsum --junitfile report.xml --format testname
+  artifacts:
+    when: always
+    reports:
+      junit: test/report.xml
+
+release:
+  stage: verify
+  needs:
+    - test-packer-artifact
   rules:
     - if: $CI_COMMIT_TAG
   image: registry.gitlab.com/gitlab-org/release-cli:latest
@@ -106,4 +157,4 @@ release:
     - echo 'running something because it is required'
   release:
     tag_name: $CI_COMMIT_TAG
-    description: See alpine-${CI_COMMIt_TAG} template in Proxmox.
+    description: See debian-${CI_COMMIT_TAG} template in Proxmox.

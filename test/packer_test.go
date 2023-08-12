@@ -13,28 +13,31 @@ import (
 )
 
 func TestPackerDebianBuild(t *testing.T) {
-	templateName := "packer-debian-test-" + uuid.NewString()
-	packerOptions := &packer.Options{
-		Template:   "debian.pkr.hcl",
-		WorkingDir: "..",
-		Vars: map[string]string{
-			"template_name": templateName,
-			"proxmox_node":  "bfte",
-		},
-	}
-	preseedURL, ok := os.LookupEnv("PRESEED_URL")
-	if ok {
-		packerOptions.Vars = map[string]string{
-			"template_name": templateName,
-			"proxmox_node":  "bfte",
-			"preseed_url":   preseedURL,
+	templateName, ok := os.LookupEnv("TEST_EXISTING_TEMPLATE")
+	if !ok {
+		templateName := "packer-debian-test-" + uuid.NewString()
+		packerOptions := &packer.Options{
+			Template:   "debian.pkr.hcl",
+			WorkingDir: "..",
+			Vars: map[string]string{
+				"template_name": templateName,
+				"proxmox_node":  "bfte",
+			},
 		}
-	}
+		preseedURL, ok := os.LookupEnv("PRESEED_URL")
+		if ok {
+			packerOptions.Vars = map[string]string{
+				"template_name": templateName,
+				"proxmox_node":  "bfte",
+				"preseed_url":   preseedURL,
+			}
+		}
 
-	defer deleteProxmoxVM(t, templateName)
-	packer.BuildArtifact(t, packerOptions)
-	// Proxmox takes a second to rename the template.
-	time.Sleep(5 * time.Second)
+		defer deleteProxmoxVM(t, templateName)
+		packer.BuildArtifact(t, packerOptions)
+		// Proxmox takes a second to rename the template.
+		time.Sleep(5 * time.Second)
+	}
 
 	sshKeyPair := generateED25519KeyPair(t)
 
