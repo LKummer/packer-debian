@@ -81,7 +81,7 @@ source "proxmox-iso" "debian" {
   ssh_username   = "root"
   ssh_password   = var.ssh_password
   ssh_port       = 22
-  ssh_timeout    = "10m"
+  ssh_timeout    = "15m"
 
   boot_wait = "10s"
   boot_command = [
