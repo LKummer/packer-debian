@@ -18,6 +18,12 @@ variable "proxmox_node" {
   type        = string
 }
 
+variable "ssh_password" {
+  description = "Root user password."
+  type        = string
+  sensitive   = true
+}
+
 variable "template_name" {
   description = "Name of the created template."
   type        = string
@@ -73,7 +79,7 @@ source "proxmox-iso" "debian" {
 
   http_directory = "http"
   ssh_username   = "root"
-  ssh_password   = "packer"
+  ssh_password   = var.ssh_password
   ssh_port       = 22
   ssh_timeout    = "10m"
 

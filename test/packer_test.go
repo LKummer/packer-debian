@@ -22,6 +22,7 @@ func TestPackerDebianBuild(t *testing.T) {
 			Vars: map[string]string{
 				"template_name": templateName,
 				"proxmox_node":  "bfte",
+				"ssh_password":  "FOR_TESTING_ONLY",
 			},
 		}
 		preseedURL, ok := os.LookupEnv("PRESEED_URL")
@@ -29,6 +30,7 @@ func TestPackerDebianBuild(t *testing.T) {
 			packerOptions.Vars = map[string]string{
 				"template_name": templateName,
 				"proxmox_node":  "bfte",
+				"ssh_password":  "FOR_TESTING_ONLY",
 				"preseed_url":   preseedURL,
 			}
 		}
