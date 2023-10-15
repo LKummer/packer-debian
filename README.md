@@ -17,7 +17,7 @@ This template is meant for use [with terraform-proxmox machine module](https://g
 module "example_vm" {
   source = "github.com/LKummer/terraform-proxmox//modules/machine"
 
-  proxmox_template = "debian-12.1.0-1"
+  proxmox_template = "debian-12.2.0-1"
   # ...
 }
 ```
