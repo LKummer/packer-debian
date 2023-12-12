@@ -44,8 +44,8 @@ source "proxmox-iso" "debian" {
   node                     = var.proxmox_node
 
   iso_storage_pool = "local"
-  iso_url          = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.2.0-amd64-netinst.iso"
-  iso_checksum     = "23ab444503069d9ef681e3028016250289a33cc7bab079259b73100daee0af66"
+  iso_url          = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.4.0-amd64-netinst.iso"
+  iso_checksum     = "64d727dd5785ae5fcfd3ae8ffbede5f40cca96f1580aaa2820e8b99dae989d94"
 
   template_name        = "${var.template_name}${var.template_name_suffix}"
   template_description = var.template_description
