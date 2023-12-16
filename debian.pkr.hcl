@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     proxmox = {
-      version = ">= 1.1.3"
+      version = ">= 1.1.6"
       source  = "github.com/hashicorp/proxmox"
     }
   }
@@ -52,7 +52,7 @@ source "proxmox-iso" "debian" {
 
   unmount_iso = true
 
-  scsi_controller = "virtio-scsi-pci"
+  scsi_controller = "virtio-scsi-single"
   os              = "l26"
   qemu_agent      = true
 
@@ -69,6 +69,7 @@ source "proxmox-iso" "debian" {
     disk_size    = "10G"
     storage_pool = "local-lvm"
     format       = "raw"
+    io_thread    = true
   }
 
   http_directory = "http"

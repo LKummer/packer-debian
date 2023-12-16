@@ -3,11 +3,6 @@ variable "proxmox_api_url" {
   type        = string
 }
 
-variable "proxmox_target_node" {
-  description = "Proxmox node the machine will be created on."
-  type        = string
-}
-
 variable "proxmox_template" {
   description = "Proxmox template to clone."
   type        = string
@@ -21,6 +16,6 @@ variable "cloud_init_public_keys" {
 
 variable "disk_size" {
   description = "Disk size when cloning, used to test disk resizing."
-  type        = string
-  default     = "15G"
+  type        = number
+  default     = 15
 }
