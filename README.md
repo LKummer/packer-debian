@@ -4,10 +4,10 @@ Packer configuration for building a Debian Linux 'cloud image' Proxmox template.
 
 Features:
 
-* Includes Cloud Init for configuration when cloning.
-* Includes `sudo` and QEMU guest agent.
-* Ready for configuration with Ansible.
-* Tested with Terratest.
+- Includes Cloud Init for configuration when cloning.
+- Includes `sudo` and QEMU guest agent.
+- Ready for configuration with Ansible.
+- Tested with Terratest.
 
 ## Usage
 
@@ -17,7 +17,7 @@ This template is meant for use [with terraform-proxmox machine module](https://g
 module "example_vm" {
   source = "github.com/LKummer/terraform-proxmox//modules/machine"
 
-  proxmox_template = "debian-12.4.0-1"
+  proxmox_template = "debian-12.7.0-1"
   # ...
 }
 ```
@@ -28,9 +28,9 @@ See [terraform-proxmox machine example for more details](https://github.com/LKum
 
 Required tools:
 
-* Packer `v1.9.1`.
-* Terraform `v1.4.6`.
-* Go `1.18.2`.
+- Packer `v1.9.1`.
+- Terraform `v1.4.6`.
+- Go `1.18.2`.
 
 To create a Proxmox API token with correct privileges, [follow this guide](https://homelab.pages.houseofkummer.com/wiki/administrate/proxmox-api-tokens/).
 
@@ -100,8 +100,8 @@ This repository, Packer and Debian all assume you are running on Linux.
 
 ## Useful Resources
 
-* [Packer Proxmox ISO builder documentation](https://www.packer.io/docs/builders/proxmox/iso).
-* [Proxmox wiki on creating a custom cloud image](https://pve.proxmox.com/wiki/Cloud-Init_FAQ#Creating_a_custom_cloud_image).
-* [cloud-init documentation](https://cloudinit.readthedocs.io/en/latest/index.html).
-* [Setting up Proxmox role with permissions for Packer](https://github.com/hashicorp/packer/issues/8463#issuecomment-726844945).
-* [Official Alpine cloud image builder](https://gitlab.alpinelinux.org/alpine/cloud/alpine-cloud-images).
+- [Packer Proxmox ISO builder documentation](https://www.packer.io/docs/builders/proxmox/iso).
+- [Proxmox wiki on creating a custom cloud image](https://pve.proxmox.com/wiki/Cloud-Init_FAQ#Creating_a_custom_cloud_image).
+- [cloud-init documentation](https://cloudinit.readthedocs.io/en/latest/index.html).
+- [Setting up Proxmox role with permissions for Packer](https://github.com/hashicorp/packer/issues/8463#issuecomment-726844945).
+- [Official Alpine cloud image builder](https://gitlab.alpinelinux.org/alpine/cloud/alpine-cloud-images).
